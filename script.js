@@ -25,11 +25,11 @@ async function main() {
     //add search keyword
     await driver
         .findElement(By.id('okta-signin-username'))
-        .sendKeys('aditya@acceldata.io');
+        .sendKeys('');
 
     await driver
         .findElement(By.id('okta-signin-password'))
-        .sendKeys('Aks@Mac@Ad@2201', Key.RETURN);
+        .sendKeys('', Key.RETURN);
 
 
     setTimeout(async function () {
