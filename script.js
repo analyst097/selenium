@@ -54,13 +54,34 @@ async function getTransitives(driver) {
     let results = [];
     const transitiveLinkSelector = '.F2 .gwt-Anchor';
     results = await driver.findElements(By.css(transitiveLinkSelector));
-    results.forEach(async (result) => {
-        result.click();
-        let deps = await driver.wait(until.elementLocated(By.css('.CY .gwt-Anchor')), 30000, 'Timed out after 30 seconds', 5000);
-        console.log(deps);
-    })
 
-    console.log('result: ', results);
+    for (const result of results) {
+        const text = await result.getText();
+        const tag = await result.getTagName();
+        if (text === 'Transitive' && tag === 'a') {
+            await result.click()
+                .then(async (res) => {
+                    const deps = await driver.findElements(By.css('.CY .gwt-Anchor'));
+                    await driver.findElement(By.css('.gwt-DialogBox .gwt-Button')).click();
+                    console.log('deps', deps);
+                    return 1;
+
+                }).catch(err => {
+                    console.log('err', err);
+                })
+
+            // async function deps() {
+            //     const deps = await driver.findElements(By.css('.CY .gwt-Anchor'));
+            //     await driver.findElement(By.css('.gwt-DialogBox .gwt-Button')).click();
+            //     console.log('deps', deps);
+            // }
+            // await deps();
+        }
+    }
+    // results.forEach(async (result) => {
+
+    // })
+
     if (!results.length) {
         console.log("running again");
         setTimeout(() => getTransitives(driver), 10000)
