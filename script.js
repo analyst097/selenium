@@ -34,11 +34,11 @@ async function main() {
         setTimeout(async function () {
             await driver
                 .findElement(By.id('okta-signin-username'))
-                .sendKeys('aditya@acceldata.io');
+                .sendKeys('');
 
             await driver
                 .findElement(By.id('okta-signin-password'))
-                .sendKeys('Aks@Mac@Ad@2201', Key.RETURN);
+                .sendKeys('', Key.RETURN);
 
             fs.writeFile('output.txt', '', (err) => {
                 console.log(err);
