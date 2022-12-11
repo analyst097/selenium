@@ -1,13 +1,14 @@
 const { Builder, By, Key, Capabilities, until } = require('selenium-webdriver');
 
 const chrome = require('selenium-webdriver/chrome');
-const options = new chrome.Options();
-// options.addArguments("user-data-dir=/Users/aditya.sahu/Library/Application Support/Google/Chrome/Profile 1")
-// options.addArguments("profile-directory=Profile 1")
 
-const fs = require('fs');
+var fs = require('fs');
 
+var Transitive = 'Transitive';
 var allRowsSelector = 'td.FIB tr.EK, td.FIB tr.DL';
+var libColSelector = 'td:nth-child(2) a';
+var projectColSelector = 'td:nth-child(4) a';
+var transitiveLinkSelector = 'td:nth-child(8) a'
 
 async function main() {
 
@@ -45,15 +46,17 @@ async function main() {
             });
 
             setTimeout(async () => {
+                // find all rows
 
-                const recordsXpath = '/html/body/div[7]/div[1]/div/div[3]/div/div/table/tbody/tr/td/div/div/table/tbody/tr[3]/td/div[2]/div/div[4]/table/tbody/tr/td[3]/div';
+                //calc no. of iterations
+                var recordsXpath = '/html/body/div[7]/div[1]/div/div[3]/div/div/table/tbody/tr/td/div/div/table/tbody/tr[3]/td/div[2]/div/div[4]/table/tbody/tr/td[3]/div';
                 const el = await driver.findElement(By.xpath(recordsXpath));
                 const elTxt = await el.getText();
                 const totalRows = +elTxt.split('of')[1].trim();
                 console.log(totalRows);
                 var iterations = Math.floor(totalRows / 100);
 
-                getTransitives(driver, iterations)
+                getRowsAndTransitiveDeps(driver, iterations);
             }, 30000);
 
         }, 3000)
@@ -61,6 +64,30 @@ async function main() {
 
     }, 6000)
 
+}
+
+async function getRowsAndTransitiveDeps(driver, iterations) {
+    const allrows = await driver.findElements(By.css(allRowsSelector));
+    let i = 0;
+    for (const row of allrows) {
+        const res = await row.getText();
+        if (res.includes('Transitive')) {
+            console.log(i, res);
+            i++;
+            const lib = res.split('\n')[0];
+            const project = res.split('\n')[2];
+            const t = await row.findElement(By.css(transitiveLinkSelector));
+            const asd = await getDependencyName(t, driver, lib, project);
+        }
+    }
+
+    if (iterations > 0) {
+        const nextPageSelector = 'img[aria-label=\"Next page\"]'
+        await driver.findElement(By.css(nextPageSelector)).click();
+        setTimeout(async () => {
+            getRowsAndTransitiveDeps(driver, --iterations);
+        }, 3000);
+    }
 }
 
 async function getTransitives(driver, iterations) {
@@ -89,7 +116,7 @@ async function getTransitives(driver, iterations) {
 
 }
 
-async function getDependencyName(result, driver) {
+async function getDependencyName(result, driver, lib, project) {
     return new Promise(async (resolve, reject) => {
         try {
             await result.click()
@@ -98,7 +125,7 @@ async function getDependencyName(result, driver) {
                 for (const d of deps) {
                     const dep = await d.getText();
                     console.log('deps', dep);
-                    fs.appendFile('output.txt', dep + '\n', (err) => {
+                    fs.appendFile('output.txt', lib + ',' + project + ',' + dep + '\n', (err) => {
                         if (err) {
                             throw err;
                         }
